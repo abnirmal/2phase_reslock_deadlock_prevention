@@ -1,0 +1,6 @@
+------------------------------------------------------------
+Truman State University Senior Capstone Individual Research
+------------------------------------------------------------
+
+Implements something called a "two-phase resource locking" algorithm for deadlock prevention as seen on Andrew Tanenbaum's Modern Operating Systems textbook.
+
