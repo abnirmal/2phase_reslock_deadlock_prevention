@@ -7,20 +7,21 @@ import java.util.ArrayList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
- public class SimpleProcess implements Runnable
+public class SimpleProcess implements Runnable
 {
     private int pid; // process id
-    private ArrayList<Integer> requiredRes; // originally required resources
+    private int[] requiredRes; // originally required resources
     private int[] remainingRes; // resources that are still required
     private boolean done; // whether process is completed running or not
-    private final Lock[] locks; // list of locks
+    private final ReentrantLock[] locks; // list of locks
     private int currentRes; // resource currently being dealt with
     // a variable for acquired locks might be needed
 
-    public SimpleProcess(int id, ArrayList<Integer> res, Lock[] locks) {
+    public SimpleProcess(int id, int[] res, ReentrantLock[] locks) {
         pid = id;
         requiredRes = res;
-        remainingres = requiredRes.stream().mapToInt(Integer::intValue).toArray();
+        //remainingRes = requiredRes.stream().mapToInt(Integer::intValue).toArray();
+        remainingRes = requiredRes;
         done = false;
         this.locks = locks;
     }
@@ -50,13 +51,14 @@ import java.util.concurrent.locks.ReentrantLock;
     }
 
     private void releaseResources() {
-        for (int i = 0; i < requiredRes.size() - remainingRes.length; i++) {
-            lock[requiredRes.get(i)].unlock();
+        for (int i = 0; i < requiredRes.length - remainingRes.length; i++) {
+            locks[requiredRes[i]].unlock();
         }
-        remainingres = requiredRes.stream().mapToInt(Integer::intValue).toArray();
+        //remainingres = requiredRes.stream().mapToInt(Integer::intValue).toArray();
+        remainingRes = requiredRes;
     }
 
-    public boolean attemptLock(int[] resources) {
+    private boolean attemptLock(int[] resources) {
         // if (locks.isEmpty()) {
         //     return true;
         // }
@@ -64,12 +66,13 @@ import java.util.concurrent.locks.ReentrantLock;
         // should be dealing with resoures instead of locks
         if (resources.length >= 0) {
             currentRes = resources[0];
-            Lock thisLock = locks[currentRes];
+            // ReentrantLock thisLock = locks[currentRes];
         }
         else {
             return true;
         }
 
+        ReentrantLock thisLock = locks[currentRes];
         if(thisLock.tryLock()) {
             // hold the lock
             try {
@@ -81,13 +84,13 @@ import java.util.concurrent.locks.ReentrantLock;
         }
         else {
             // return null or throw to indicate locking failure
-            System.out.println("Failure to obtain lock, releasing all locks");
+            System.out.println("P" + pid + ": failure to obtain lock for R" + currentRes + ", releasing all locks");
             return false;
         }
     }
 
     public void run() {
-        System.out.println("Process " + pid + " started.");
+        System.out.println("Process P" + pid + " started.");
         // int resCounter = 0;
         // while(remainingRes.length != 0) {
         //     attemptLock(locks);
@@ -98,10 +101,10 @@ import java.util.concurrent.locks.ReentrantLock;
             done = true;
         }
         else {
-            System.out.println("Process " + pid + " stuck with " + currentRes);
+            System.out.println("Process P" + pid + " stuck with R" + currentRes);
             releaseResources();
         }}
-        System.out.println("Process " + pid + " is complete.");
+        System.out.println("Process P" + pid + " is complete.");
     }
 
     /* From Stack overflow

@@ -7,7 +7,7 @@
 import java.util.Scanner;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -26,18 +26,38 @@ public class MainClass
 
         System.out.print("Enter number of resources: ");
         final int nr = in.nextInt(); // number of resources
-        final Lock[] locked_res = new ReentrantLock[nr]; // array of locks corresponding to lock status of each resource
+        in.nextLine(); // skip next line marker after accepting previous input
+        final ReentrantLock[] locked_res = new ReentrantLock[nr]; // array of locks corresponding to lock status of each resource
+
+        // initialize lock list to new ReentrantLocks
+        for (int i = 0; i < nr; i++) {
+            locked_res[i] = new ReentrantLock();
+        }
 
         // list of processes
         SimpleProcess[] processList = new SimpleProcess[np];
 
         // populate list of processes and each process with its resources
         for (int i = 0; i < np; i++) {
-            System.out.println("Enter resources required for process " + i);
-            ArrayList<Integer> resList = new ArrayList<>();
-            if (in.hasNextInt()) {
-                resList.add(in.nextInt()); // get resources input from user
+            System.out.print("Enter resources required for process " + i + ": ");
+            String inputString = in.nextLine(); //.split(" ");
+            String[] inputArray = inputString.split(" ");
+
+            int[] resList = new int[inputArray.length];
+            int index = 0;
+
+            Scanner inputReader = new Scanner(inputString);
+            while (inputReader.hasNextInt()) {
+                resList[index] = inputReader.nextInt();
+                index++;
             }
+            inputReader.close();
+
+            //int[] resList = Arrays.stream(inputArray.split(" ")).map(String::trim).mapToInt(Integer::parseInt).toArray();
+            System.out.println(Arrays.toString(resList));
+            // while (in.hasNextInt()) {
+            //     resList.add(in.nextInt()); // get resources input from user
+            // }
             SimpleProcess p = new SimpleProcess(i, resList, locked_res);
             processList[i] = p;
         }
@@ -69,16 +89,10 @@ public class MainClass
 
     // Need to calculate average delay for a process
 
-    /* Method for Safety algorithm from Banker's */
-    bool isSafe() {}
+    // /* Method for Safety algorithm from Banker's */
+    // bool isSafe() {}
 
-    // Two-phase resource locking algorithm
-    void twoPhaseLock(int np, int nr) {}
-
-    /* Method for locking a resource */
-    void lock(bool[] locked_res) {}
-
-    /* Method for releasing all held resources */
-    void release(bool[] locked_res) {}
+    // // Two-phase resource locking algorithm
+    // void twoPhaseLock(int np, int nr) {}
 
 }
