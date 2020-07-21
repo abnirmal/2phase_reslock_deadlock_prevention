@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+//import java.lang.ArrayIndexOutOfBoundsException;
 
 public class SimpleProcess implements Runnable
 {
@@ -42,7 +43,7 @@ public class SimpleProcess implements Runnable
         return remainingRes;
     }
 
-    public boolean getdone() {
+    public boolean getStatus() {
         return done;
     }
 
@@ -64,19 +65,23 @@ public class SimpleProcess implements Runnable
         // }
 
         // should be dealing with resoures instead of locks
-        if (resources.length >= 0) {
-            currentRes = resources[0];
-            // ReentrantLock thisLock = locks[currentRes];
-        }
-        else {
-            return true;
-        }
+        // if (resources.length >= 0) {
+        //     currentRes = resources[0];
+        //     // ReentrantLock thisLock = locks[currentRes];
+        // }
+        // else {
+        //     return true;
+        // }
 
+        currentRes = resources[0];
         ReentrantLock thisLock = locks[currentRes];
         if(thisLock.tryLock()) {
             // hold the lock
             try {
                 return attemptLock(Arrays.copyOfRange(resources, 1, remainingRes.length));
+            }
+            catch (ArrayIndexOutOfBoundsException e) {
+                return true;
             }
             finally {
                 thisLock.unlock();
@@ -90,45 +95,19 @@ public class SimpleProcess implements Runnable
     }
 
     public void run() {
-        System.out.println("Process P" + pid + " started.");
-        // int resCounter = 0;
-        // while(remainingRes.length != 0) {
-        //     attemptLock(locks);
-        //     resCuonter++;
-        // }
+        System.out.println("P" + pid + " started.");
+
+        // keep looping until process is complete
         while (!done) {
-        if (attemptLock(remainingRes)) {
-            done = true;
+            if (attemptLock(remainingRes)) {
+                done = true;
+            }
+            else {
+                // System.out.println("Process P" + pid + " stuck with R" + currentRes);
+                releaseResources();
+            }
         }
-        else {
-            System.out.println("Process P" + pid + " stuck with R" + currentRes);
-            releaseResources();
-        }}
-        System.out.println("Process P" + pid + " is complete.");
+        System.out.println("P" + pid + " is complete.");
     }
-
-    /* From Stack overflow
-    class LockingUtils {
-    <V> static V attemptWithLock(List<Lock> locks, Callable<V> action) {
-    if (locks.isEmpty()) {
-      return action.call();
-    }
-
-    Lock thisLock = locks.get(0);
-
-    if (thisLock.tryLock()) {
-      // we hold the lock
-      try {
-        return attemptWithLock(locks.subList(1, locks.size()), action);
-      } finally {
-        thisLock.unlock();
-      }
-    }
-    else {
-      // return null or throw to indicate locking failure, however you like
-    }
-  }
-}
-     */
 
 }
