@@ -81,6 +81,7 @@ public class SimpleProcess implements Runnable
                 return attemptLock(Arrays.copyOfRange(resources, 1, remainingRes.length));
             }
             catch (ArrayIndexOutOfBoundsException e) {
+                releaseResources() // before returning all held resources should be released
                 return true; // since all required locks have been secured
             }
             finally {
