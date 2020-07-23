@@ -16,6 +16,7 @@ public class SimpleProcess implements Runnable
     private boolean done; // whether process is completed running or not
     private final ReentrantLock[] locks; // list of locks
     private int currentRes; // resource currently being dealt with
+    private int previousRes;
     // a variable for acquired locks might be needed
 
     public SimpleProcess(int id, int[] res, ReentrantLock[] locks) {
@@ -53,6 +54,7 @@ public class SimpleProcess implements Runnable
 
     private void releaseResources() {
         for (int i = 0; i < requiredRes.length - remainingRes.length; i++) {
+            System.out.println("P" + pid + " releasing R" + requiredRes[i]);
             locks[requiredRes[i]].unlock();
         }
         //remainingres = requiredRes.stream().mapToInt(Integer::intValue).toArray();
@@ -72,27 +74,33 @@ public class SimpleProcess implements Runnable
         // else {
         //     return true;
         // }
-
+        previousRes = currentRes;
         currentRes = resources[0];
         ReentrantLock thisLock = locks[currentRes];
         if(thisLock.tryLock()) {
             // hold the lock
             try {
-                return attemptLock(Arrays.copyOfRange(resources, 1, remainingRes.length));
+                remainingRes = Arrays.copyOfRange(resources, 1, remainingRes.length);
+                System.out.println("P" + pid + " needs " + Arrays.toString(remainingRes));
+                return attemptLock(remainingRes);
             }
             catch (ArrayIndexOutOfBoundsException e) {
-                releaseResources(); // before returning all held resources should be released
+                //releaseResources(); // before returning all held resources should be released
                 return true; // since all required locks have been secured
             }
             finally {
+                // System.out.println("P" + pid + " got here!");
+                System.out.println("P" + pid + " releasing R" + currentRes);
                 thisLock.unlock();
             }
         }
         else {
             // return null or throw to indicate locking failure
             System.out.println("P" + pid + ": failure to obtain lock for R" + currentRes + ", releasing all locks");
+            currentRes = previousRes;
             return false;
         }
+        // return true;
     }
 
     public void run() {
@@ -104,8 +112,9 @@ public class SimpleProcess implements Runnable
                 done = true;
             }
             else {
+                remainingRes = requiredRes;
                 // System.out.println("Process P" + pid + " stuck with R" + currentRes);
-                releaseResources();
+                // releaseResources();
             }
         }
         System.out.println("P" + pid + " is complete.");
