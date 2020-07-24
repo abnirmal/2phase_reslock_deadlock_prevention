@@ -17,6 +17,7 @@ public class SimpleProcess implements Runnable
     private final ReentrantLock[] locks; // list of locks
     private int currentRes; // resource currently being dealt with
     private int previousRes;
+
     // a variable for acquired locks might be needed
 
     public SimpleProcess(int id, int[] res, ReentrantLock[] locks) {
@@ -90,7 +91,7 @@ public class SimpleProcess implements Runnable
             }
             finally {
                 // System.out.println("P" + pid + " got here!");
-                System.out.println("P" + pid + " releasing R" + currentRes);
+                System.out.println("P" + pid + " releasing R" + resources[0]);
                 thisLock.unlock();
             }
         }
