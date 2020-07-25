@@ -16,7 +16,8 @@ public class SimpleProcess implements Runnable
     private boolean done; // whether process is completed running or not
     private final ReentrantLock[] locks; // list of locks
     private int currentRes; // resource currently being dealt with
-    private int previousRes;
+    private int currentResIndex; // index of resource currently being dealt with
+    private long[] delay; // delay for each required resource
 
     // a variable for acquired locks might be needed
 
@@ -27,6 +28,9 @@ public class SimpleProcess implements Runnable
         remainingRes = requiredRes;
         done = false;
         this.locks = locks;
+        currentResIndex = 0;
+        delay = new long[res.length];
+        //Arrays.fill(delay, 0); // no need since Java by default makes it 0
     }
 
     /**
@@ -62,6 +66,14 @@ public class SimpleProcess implements Runnable
         remainingRes = requiredRes;
     }
 
+    public long findAverageDelay() {
+        long delaySum = 0;
+        for (long delayValue : delay) {
+            delaySum += delayValue;
+        }
+        return delaySum / (delay.length * 1000);
+    }
+
     private boolean attemptLock(int[] resources) {
         // if (locks.isEmpty()) {
         //     return true;
@@ -75,13 +87,18 @@ public class SimpleProcess implements Runnable
         // else {
         //     return true;
         // }
-        previousRes = currentRes;
         currentRes = resources[0];
         ReentrantLock thisLock = locks[currentRes];
+        // ArrayIndexOutOfBounds follows because it is using resources as index
+        // this deals with assigning current time if not alrady initialized
+        // while subtracting from already present value for a resource in the way
+        // end - (start - previous) = end - start + previous delay value
+        delay[currentResIndex] = System.nanoTime() - delay[currentResIndex];
         if(thisLock.tryLock()) {
             // hold the lock
             try {
                 remainingRes = Arrays.copyOfRange(resources, 1, remainingRes.length);
+                currentResIndex++;
                 System.out.println("P" + pid + " needs " + Arrays.toString(remainingRes));
                 return attemptLock(remainingRes);
             }
@@ -97,8 +114,15 @@ public class SimpleProcess implements Runnable
         }
         else {
             // return null or throw to indicate locking failure
-            System.out.println("P" + pid + ": failure to obtain lock for R" + currentRes + ", releasing all locks");
-            currentRes = previousRes;
+            // System.out.print("P" + pid + ": failure to obtain lock for R" + currentRes);
+            if (requiredRes.length - resources.length > 0) { // some resource was acquired
+                System.out.println("P" + pid + ": failure to obtain lock for R" + currentRes + ", releasing all locks");
+            }
+            else {
+                System.out.println("P" + pid + ": failure to obtain lock for R" + currentRes);
+            }
+            delay[currentResIndex] = System.nanoTime() - delay[resources[0]];
+            currentResIndex = (currentResIndex > 0) ? currentResIndex-- : currentResIndex;
             return false;
         }
         // return true;
@@ -110,6 +134,13 @@ public class SimpleProcess implements Runnable
         // keep looping until process is complete
         while (!done) {
             if (attemptLock(remainingRes)) {
+                try {
+                    // simulate holding by sleeping: here to mimic some resource(s) being used
+                    Thread.sleep(2000);    
+                }
+                catch (InterruptedException e) {
+                    System.out.println('P' + pid + ": Exception occured.");
+                }
                 done = true;
             }
             else {
@@ -119,6 +150,7 @@ public class SimpleProcess implements Runnable
             }
         }
         System.out.println("P" + pid + " is complete.");
+        System.out.println("P" + pid + ": avg delay = " + findAverageDelay() + " microseconds.");
     }
 
 }
