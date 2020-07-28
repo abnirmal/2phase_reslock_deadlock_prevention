@@ -4,31 +4,39 @@
  * @version 2020-02-22
  */
 
-import java.util.Scanner;
+// import java.util.Scanner;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.Arrays;
+import java.util.Random;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.io.IOException;
 
 public class MainClass
 {
     public static void main(String args[]) {
-        Scanner in = new Scanner(System.in);
+        final int N_PROCESSES = 1000;
+        final int N_RESOURCES = 100;
+        final int LOW_RES_COUNT = 5;
+        final int HIGH_RES_COUNT = 50;
+        String outFile = "data.dat";
+        // Scanner in = new Scanner(System.in);
+        Random r = new Random();
 
         // match number of processes to number of threads
-        System.out.print("Enter number of processes: ");
-        final int np = in.nextInt();
+        // System.out.println("Enter number of processes: ");
+        final int np = N_PROCESSES;
         // bool done = bool[np]; // array to hold values for whether processes are done
         // Arrays.fill(done, false); // fill array with false value for not done
 
-        System.out.print("Enter number of resources: ");
-        final int nr = in.nextInt(); // number of resources
-        in.nextLine(); // skip next line marker after accepting previous input
+        // System.out.println("Enter number of resources: ");
+        final int nr = N_RESOURCES; // number of resources
+        // in.nextLine(); // skip next line marker after accepting previous input
         // array of locks corresponding to lock status of each resource
         final ReentrantLock[] locked_res = new ReentrantLock[nr];
 
@@ -42,19 +50,20 @@ public class MainClass
 
         // populate list of processes and each process with its resources
         for (int i = 0; i < np; i++) {
-            System.out.print("Enter resources required for process " + i + ": ");
-            String inputString = in.nextLine(); //.split(" ");
-            String[] inputArray = inputString.split(" ");
+            System.out.println("Enter resources required for process " + i + ": ");
+            // String inputString = in.nextLine(); //.split(" ");
+            // String[] inputArray = inputString.split(" ");
+            int resLength = r.nextInt(HIGH_RES_COUNT - LOW_RES_COUNT + 1) + LOW_RES_COUNT;
 
-            int[] resList = new int[inputArray.length];
-            int index = 0;
+            int[] resList = r.ints(resLength, 0, nr).distinct().toArray();;
+            // int index = 0;
 
-            Scanner inputReader = new Scanner(inputString);
-            while (inputReader.hasNextInt()) {
-                resList[index] = inputReader.nextInt();
-                index++;
-            }
-            inputReader.close();
+            // Scanner inputReader = new Scanner(inputString);
+            // while (inputReader.hasNextInt()) {
+            //     resList[index] = inputReader.nextInt();
+            //     index++;
+            // }
+            // inputReader.close();
 
             //int[] resList = Arrays.stream(inputArray.split(" ")).map(String::trim).mapToInt(Integer::parseInt).toArray();
             System.out.println(Arrays.toString(resList));
@@ -64,14 +73,27 @@ public class MainClass
             SimpleProcess p = new SimpleProcess(i, resList, locked_res);
             processList[i] = p;
         }
-        in.close();
+        // in.close();
 
         //Create the threads
         Thread[] threadList = new Thread[np];
 		for (int i = 0; i < np; i++) {
 			threadList[i] = new Thread(processList[i]);
-		}
+        }
+
+        // File file;
         
+        // try {
+        //     file = new File(outFile);
+        // }
+        // catch (FileNotFoundException e) {
+        //     System.out.println("File not found.");
+        // }
+        
+        // PrintStream externalFile = new PrintStream(new FileOutputStream(outFile));
+        // PrintStream console = System.out;
+        // System.setOut(externalFile);
+
         // Start each thread
 		for (int i = 0; i < np; i++) {
 			// System.out.println("Starting thread "
@@ -79,7 +101,8 @@ public class MainClass
 			// 					+ " ...");
 			threadList[i].start();
 			//System.out.println(processList[i].getPid() + " started ...");
-		}
+        }
+        // System.setOut(console);
         
         /* Read resources from text file into a 2d array */
         /* 2nd dimension will contain value for lock */
