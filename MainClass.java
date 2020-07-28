@@ -72,9 +72,9 @@ public class MainClass
         
         // Start each thread
 		for (int i = 0; i < np; i++) {
-			System.out.println("Starting thread "
-								+ processList[i].getPid()
-								+ " ...");
+			// System.out.println("Starting thread "
+			// 					+ processList[i].getPid()
+			// 					+ " ...");
 			threadList[i].start();
 			//System.out.println(processList[i].getPid() + " started ...");
 		}

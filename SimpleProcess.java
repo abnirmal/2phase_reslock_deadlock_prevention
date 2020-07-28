@@ -15,7 +15,11 @@ public class SimpleProcess implements Runnable
     private final ReentrantLock[] locks; // list of locks
     private int currentRes; // resource currently being dealt with
     private int currentResIndex; // index of resource currently being dealt with
-    private long[] delay; // delay for each required resource
+    //private long[] delay; // delay for each required resource
+    private long threadStartTime; // start time of process
+    private long threadEndTime; // end time of process
+    private long[] startTime; // start time for each resource access
+    private long[] delays; // delay for each resource access
     private int failedReleases; // number of failures leading to release of all resources
 
     // a variable for acquired locks might be needed
@@ -28,7 +32,8 @@ public class SimpleProcess implements Runnable
         this.locks = locks;
         currentResIndex = 0;
         failedReleases = 0;
-        delay = new long[res.length];
+        startTime = new long[res.length];
+        delays = new long[res.length]; // will need double for time eventually
         //Arrays.fill(delay, 0); // no need since Java by default makes it 0
     }
 
@@ -69,12 +74,19 @@ public class SimpleProcess implements Runnable
         return failedReleases;
     }
 
-    public long findAverageDelay() {
+    public double findAverageDelay() {
+        if (failedReleases <= 0) {
+            return 0;
+        }
         long delaySum = 0;
-        for (long delayValue : delay) {
+        for (long delayValue : delays) {
             delaySum += delayValue;
         }
-        return delaySum / (delay.length * 1000);
+        return delaySum / (failedReleases * 1000);
+    }
+
+    public double findExecTime() {
+        return (threadEndTime - threadStartTime) / 1000;
     }
 
     private boolean attemptLock(int[] resources) {
@@ -96,7 +108,7 @@ public class SimpleProcess implements Runnable
         // this deals with assigning current time if not alrady initialized
         // while subtracting from already present value for a resource in the way
         // end - (start - previous) = end - start + previous delay value
-        delay[currentResIndex] = System.nanoTime() - delay[currentResIndex];
+        startTime[currentResIndex] = System.nanoTime();
         if(thisLock.tryLock()) {
             // hold the lock
             try {
@@ -125,7 +137,7 @@ public class SimpleProcess implements Runnable
                 System.out.println("P" + pid + ": failure to obtain lock for R" + currentRes);
             }
             failedReleases++;
-            delay[currentResIndex] = System.nanoTime() - delay[currentResIndex];
+            delays[currentResIndex] += System.nanoTime() - startTime[currentResIndex];
             currentResIndex = (currentResIndex > 0) ? currentResIndex-- : currentResIndex;
             return false;
         }
@@ -134,17 +146,19 @@ public class SimpleProcess implements Runnable
 
     public void run() {
         System.out.println("P" + pid + " started.");
+        threadStartTime = System.nanoTime();
 
         // keep looping until process is complete
         while (!done) {
             if (attemptLock(remainingRes)) {
-                try {
-                    // simulate holding by sleeping: here to mimic some resource(s) being used
-                    Thread.sleep(2000);    
-                }
-                catch (InterruptedException e) {
-                    System.out.println('P' + pid + ": Exception occured.");
-                }
+                // try {
+                //     // simulate holding by sleeping: here to mimic some resource(s) being used
+                //     Thread.sleep(2000);    
+                // }
+                // catch (InterruptedException e) {
+                //     System.out.println('P' + pid + ": Exception occured.");
+                // }
+                threadEndTime = System.nanoTime();
                 done = true;
             }
             else {
@@ -155,7 +169,7 @@ public class SimpleProcess implements Runnable
         }
         System.out.println("P" + pid + " is complete.");
         System.out.println("P" + pid + ": Failed releases: " + failedReleases);
-        System.out.println("P" + pid + ": avg delay = " + findAverageDelay() + " microseconds.");
+        System.out.println("P" + pid + ": ex. time = " + findExecTime() + " microseconds, avg. delay = " + findAverageDelay() + " microseconds.");
     }
 
 }
