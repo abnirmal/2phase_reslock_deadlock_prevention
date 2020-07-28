@@ -27,7 +27,8 @@ public class MainClass
         System.out.print("Enter number of resources: ");
         final int nr = in.nextInt(); // number of resources
         in.nextLine(); // skip next line marker after accepting previous input
-        final ReentrantLock[] locked_res = new ReentrantLock[nr]; // array of locks corresponding to lock status of each resource
+        // array of locks corresponding to lock status of each resource
+        final ReentrantLock[] locked_res = new ReentrantLock[nr];
 
         // initialize lock list to new ReentrantLocks
         for (int i = 0; i < nr; i++) {

@@ -3,10 +3,8 @@
  * does its work and then exits
  */
 import java.util.Arrays;
-import java.util.ArrayList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-//import java.lang.ArrayIndexOutOfBoundsException;
 
 public class SimpleProcess implements Runnable
 {
@@ -18,17 +16,18 @@ public class SimpleProcess implements Runnable
     private int currentRes; // resource currently being dealt with
     private int currentResIndex; // index of resource currently being dealt with
     private long[] delay; // delay for each required resource
+    private int failedReleases; // number of failures leading to release of all resources
 
     // a variable for acquired locks might be needed
 
     public SimpleProcess(int id, int[] res, ReentrantLock[] locks) {
         pid = id;
         requiredRes = res;
-        //remainingRes = requiredRes.stream().mapToInt(Integer::intValue).toArray();
         remainingRes = requiredRes;
         done = false;
         this.locks = locks;
         currentResIndex = 0;
+        failedReleases = 0;
         delay = new long[res.length];
         //Arrays.fill(delay, 0); // no need since Java by default makes it 0
     }
@@ -64,6 +63,10 @@ public class SimpleProcess implements Runnable
         }
         //remainingres = requiredRes.stream().mapToInt(Integer::intValue).toArray();
         remainingRes = requiredRes;
+    }
+
+    public int findFailedReleases() {
+        return failedReleases;
     }
 
     public long findAverageDelay() {
@@ -121,7 +124,8 @@ public class SimpleProcess implements Runnable
             else {
                 System.out.println("P" + pid + ": failure to obtain lock for R" + currentRes);
             }
-            delay[currentResIndex] = System.nanoTime() - delay[resources[0]];
+            failedReleases++;
+            delay[currentResIndex] = System.nanoTime() - delay[currentResIndex];
             currentResIndex = (currentResIndex > 0) ? currentResIndex-- : currentResIndex;
             return false;
         }
@@ -150,6 +154,7 @@ public class SimpleProcess implements Runnable
             }
         }
         System.out.println("P" + pid + " is complete.");
+        System.out.println("P" + pid + ": Failed releases: " + failedReleases);
         System.out.println("P" + pid + ": avg delay = " + findAverageDelay() + " microseconds.");
     }
 
